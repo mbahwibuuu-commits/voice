@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Note Player</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            width: 90%;
+            max-width: 380px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Container Icon Speaker dengan Gelombang */
+        .speaker-container {
+            width: 80px;
+            height: 80px;
+            background: #f0f4ff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px auto;
+            position: relative;
+            color: #4a90e2;
+        }
+
+        /* Icon Speaker SVG */
+        .speaker-container svg {
+            width: 36px;
+            height: 36px;
+            fill: currentColor;
+            z-index: 2;
+        }
+
+        /* Efek Gelombang Suara di sekitar Speaker */
+        .wave-ring {
+            position: absolute;
+            border: 2px solid #4a90e2;
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: scale(1);
+            transition: all 0.3s ease;
+        }
+
+        .speaker-container.playing .wave-ring {
+            animation: waveExpand 1.5s infinite ease-out;
+        }
+
+        @keyframes waveExpand {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.4);
+                opacity: 0;
+            }
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #1a1a1a;
+        }
+
+        p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        /* Tombol Interaktif Elegan */
+        .play-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .play-btn:hover {
+            background: #357abd;
+            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+        }
+
+        .play-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Sembunyikan elemen audio asli */
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- Icon Speaker dengan Animasi Gelombang -->
+        <div class="speaker-container" id="speakerIcon">
+            <div class="wave-ring"></div>
+            <!-- SVG Icon Speaker -->
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+        </div>
+
+        <h2>Pesan Suara</h2>
+        <p id="statusText">Memutar pesan suara Anda...</p>
+
+        <!-- Tag Audio (Ganti 'suara.mp3' dengan link/nama file suara Anda) -->
+        <audio id="audioPlayer" src="suara.mp3" preload="auto"></audio>
+
+        <!-- Tombol Cadangan dengan Icon Play/Pause -->
+        <button class="play-btn" id="actionBtn" onclick="togglePlay()">
+            <svg id="btnIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span id="btnText">Putar Suara</span>
+        </button>
+    </div>
+
+    <script>
+        const audio = document.getElementById('audioPlayer');
+        const btn = document.getElementById('actionBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+        const speaker = document.getElementById('speakerIcon');
+        const statusText = document.getElementById('statusText');
+
+        // Path SVG Icon
+        const playPath = "M8 5v14l11-7z";
+        const pausePath = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
+
+        // Coba langsung putar audio saat halaman dimuat
+        window.addEventListener('DOMContentLoaded', () => {
+            audio.play().then(() => {
+                // Autoplay Berhasil
+                btn.style.display = 'none'; // Sembunyikan tombol jika sukses auto-play
+                speaker.classList.add('playing');
+                statusText.textContent = "Sedang mendengarkan...";
+            }).catch(error => {
+                // Autoplay Diblokir Browser, tampilkan tombol
+                speaker.classList.remove('playing');
+                statusText.textContent = "Ketuk tombol di bawah untuk mendengarkan.";
+                console.log("Autoplay dicegah oleh browser.");
+            });
+        });
+
+        // Fungsi tombol manual jika autoplay gagal / di-pause
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                btnText.textContent = "Jeda Suara";
+                btnIcon.innerHTML = `<path d="${pausePath}"/>`;
+                speaker.classList.add('playing');
+                statusText.textContent = "Sedang mendengarkan...";
+            } else {
+                audio.pause();
+                btnText.textContent = "Putar Suara";
+                btnIcon.innerHTML = `<path d="${playPath}"/>`;
+                speaker.classList.remove('playing');
+                statusText.textContent = "Pemutar dijeda.";
+            }
+        }
+
+        // Event saat audio selesai diputar
+        audio.addEventListener('ended', () => {
+            btn.style.display = 'flex';
+            btnText.textContent = "Putar Ulang";
+            btnIcon.innerHTML = `<path d="${playPath}"/>`;
+            speaker.classList.remove('playing');
+            statusText.textContent = "Pemutar selesai.";
+        });
+    </script>
+
+</body>
+</html>
